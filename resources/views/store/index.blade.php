@@ -1334,6 +1334,152 @@
     </main>
 </div>
 
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 my-12" 
+     x-data="{ 
+        autoPlayInterval: null,
+        scrollSlider(direction) {
+            const container = this.$refs.rightSlider;
+            if (!container) return;
+            const scrollAmount = 344; // Kart genişliği (320) + gap (24)
+            
+            if (direction === 'left') {
+                if (container.scrollLeft <= 10) {
+                    container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+                } else {
+                    container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                }
+            } else {
+                if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+                    container.scrollTo({ left: 0, behavior: 'smooth' });
+                } else {
+                    container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                }
+            }
+        },
+        startAutoPlay() {
+            this.stopAutoPlay(); // Önceki interval'ı mutlaka temizle
+            this.autoPlayInterval = setInterval(() => {
+                this.scrollSlider('right');
+            }, 2500); 
+        },
+        stopAutoPlay() {
+            if (this.autoPlayInterval) {
+                clearInterval(this.autoPlayInterval);
+                this.autoPlayInterval = null;
+            }
+        }
+     }" 
+     x-init="startAutoPlay()">
+
+    @php
+        $bannerCategories = $categories->filter(function($cat) {
+                return !empty($cat->banner_image) && file_exists(public_path('storage/' . $cat->banner_image));
+            })
+            ->sortByDesc(function($cat) {
+                return $cat->is_menu ?? $cat->show_in_menu ?? $cat->is_featured ?? 0;
+            })
+            ->values();
+
+        $cat1 = $bannerCategories[0] ?? null;
+        $cat2 = $bannerCategories[1] ?? null;
+        $cat3 = $bannerCategories[2] ?? null;
+        
+        // 3'ten fazla banner varsa kalanları sağa al; 3 veya daha azsa sağ taraf boş kalmasın diye hepsini göster
+        $rightCategories = $bannerCategories->count() > 3 
+            ? $bannerCategories->slice(3) 
+            : $bannerCategories;
+    @endphp
+
+    @if($bannerCategories->count() > 0)
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {{-- SOL TARAF --}}
+            @if($cat1)
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <div class="relative group h-[320px] sm:h-[380px] rounded-3xl overflow-hidden shadow-md border border-slate-200 transition-all duration-500 hover:shadow-xl">
+                        <img src="{{ asset('storage/' . $cat1->banner_image) }}" alt="{{ $cat1->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-6 sm:p-8">
+                            <span class="bg-brandOrange text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wider mb-2 inline-block shadow-sm w-fit">Öne Çıkan</span>
+                            <span class="text-white text-2xl sm:text-3xl font-black tracking-wide drop-shadow-md block mb-3">{{ $cat1->name }}</span>
+                            <div>
+                                <a href="{{ route('store.index', ['category' => $cat1->slug]) }}#urunler" class="inline-flex items-center gap-2 bg-white/95 hover:bg-brandOrange hover:text-white text-slate-900 px-5 py-2.5 rounded-2xl font-bold text-xs transition shadow-sm backdrop-blur-md">
+                                    <span>Ürünleri İncele</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        @if($cat2)
+                            <div class="relative group h-[180px] rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition-all duration-500 hover:shadow-md">
+                                <img src="{{ asset('storage/' . $cat2->banner_image) }}" alt="{{ $cat2->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-4">
+                                    <span class="text-white text-base font-black tracking-wide truncate mb-2">{{ $cat2->name }}</span>
+                                    <a href="{{ route('store.index', ['category' => $cat2->slug]) }}#urunler" class="text-[11px] font-bold text-orange-400 hover:text-white transition flex items-center gap-1">
+                                        İncele &rarr;
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($cat3)
+                            <div class="relative group h-[180px] rounded-2xl overflow-hidden shadow-sm border border-slate-200 transition-all duration-500 hover:shadow-md">
+                                <img src="{{ asset('storage/' . $cat3->banner_image) }}" alt="{{ $cat3->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-end p-4">
+                                    <span class="text-white text-base font-black tracking-wide truncate mb-2">{{ $cat3->name }}</span>
+                                    <a href="{{ route('store.index', ['category' => $cat3->slug]) }}#urunler" class="text-[11px] font-bold text-orange-400 hover:text-white transition flex items-center gap-1">
+                                        İncele &rarr;
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
+            {{-- SAĞ TARAF: SLIDER ALANI --}}
+            <div class="lg:col-span-7 relative">
+                @if($rightCategories->count() > 0)
+                    <div class="absolute top-4 right-6 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-lg">
+                        <button type="button" @click="stopAutoPlay(); scrollSlider('left')" class="w-9 h-9 rounded-xl bg-white/90 hover:bg-white text-slate-800 flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        <button type="button" @click="stopAutoPlay(); scrollSlider('right')" class="w-9 h-9 rounded-xl bg-white/90 hover:bg-white text-slate-800 flex items-center justify-center transition active:scale-95 shadow-sm cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+
+                    <div x-ref="rightSlider" 
+                         @mouseenter="stopAutoPlay()" 
+                         @mouseleave="startAutoPlay()"
+                         class="flex gap-6 overflow-x-auto pb-4 pt-1 scroll-smooth h-full items-center [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        
+                        @foreach($rightCategories as $category)
+                            <div class="min-w-[280px] sm:min-w-[320px] h-[320px] sm:h-[580px] relative group rounded-3xl overflow-hidden shadow-md border border-slate-200 shrink-0 transition-all duration-500 hover:shadow-xl">
+                                <img src="{{ asset('storage/' . $category->banner_image) }}" alt="{{ $category->name }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex flex-col justify-end p-6 sm:p-8">
+                                    <span class="text-[9px] text-orange-400 font-black uppercase tracking-widest block mb-1">Özel Koleksiyon</span>
+                                    <span class="text-white text-xl sm:text-2xl font-black tracking-wide drop-shadow-md block mb-4">{{ $category->name }}</span>
+                                    <div>
+                                        <a href="{{ route('store.index', ['category' => $category->slug]) }}#urunler" class="inline-flex items-center gap-2 bg-white/95 hover:bg-brandOrange hover:text-white text-slate-900 px-5 py-2.5 rounded-2xl font-bold text-xs transition shadow-sm backdrop-blur-md">
+                                            <span>Ürünleri İncele</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+        </div>
+    @endif
+</div>
+
+{{-- Eğer ana layout dosyasında Alpine.js yoksa bu satırı aktif edin --}}
+{{-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script> --}}
 <div x-data="{ 
     isOpen: false, 
     messages: [
