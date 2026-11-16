@@ -19,28 +19,30 @@
     <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
         @csrf
         
-        <!-- Ürün Adı -->
+        <!-- Ürün Adı (Pazaryerleri İçin İdeal: Max 80 Karakter) -->
         <div x-data="{ count: {{ mb_strlen(old('name', $product->name ?? '')) }} }">
             <div class="flex justify-between items-center mb-1">
                 <label class="block text-gray-700 font-medium text-sm">Ürün Adı</label>
-                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 36'"></span>
+                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 80'"></span>
             </div>
             <input type="text" 
                 name="name" 
                 value="{{ old('name', $product->name ?? '') }}" 
-                maxlength="36" 
+                maxlength="80" 
                 @input="count = $el.value.length" 
                 class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
+                placeholder="Örn: Bak Gel Al X-Pro Kablosuz Kulaklık Siyah"
                 required>
         </div>
 
-        <!-- YENİ: MARKA VE BARKOD ALANLARI -->
+        <!-- MARKA VE BARKOD ALANLARI -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label class="block text-gray-700 font-medium mb-1 text-sm">Marka</label>
                 <input type="text" 
                     name="brand" 
                     value="{{ old('brand', $product->brand ?? '') }}" 
+                    maxlength="100"
                     class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
                     placeholder="Örn: Sinem">
             </div>
@@ -49,6 +51,7 @@
                 <input type="text" 
                     name="barcode" 
                     value="{{ old('barcode', $product->barcode ?? '') }}" 
+                    maxlength="50"
                     class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
                     placeholder="Örn: 8690000000000">
             </div>
@@ -61,6 +64,7 @@
                 <input type="text" 
                     name="sku" 
                     value="{{ old('sku', $product->sku ?? '') }}" 
+                    maxlength="50"
                     class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm uppercase" 
                     placeholder="Örn: PRD-2026-001">
             </div>
@@ -77,18 +81,18 @@
             </div>
         </div>
         
-        <!-- Ürün Açıklaması -->
+        <!-- Ürün Açıklaması (Amazon/Trendyol İçin Genişletildi: Max 2000 Karakter) -->
         <div x-data="{ count: {{ mb_strlen(old('description', $product->description ?? '')) }} }">
             <div class="flex justify-between items-center mb-1">
                 <label class="block text-gray-700 font-medium text-sm">Ürün Açıklaması</label>
-                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 505'"></span>
+                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 2000'"></span>
             </div>
             <textarea name="description" 
-                    rows="3" 
-                    maxlength="505" 
+                    rows="4" 
+                    maxlength="2000" 
                     @input="count = $el.value.length" 
                     class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
-                    placeholder="Ürün hakkında detaylar...">{{ old('description', $product->description ?? '') }}</textarea>
+                    placeholder="Ürün hakkında detaylar, özellikler ve kullanım bilgileri...">{{ old('description', $product->description ?? '') }}</textarea>
         </div>
 
         <!-- Fiyat ve Stok -->
@@ -110,15 +114,15 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
                 <label class="block text-gray-700 font-medium mb-1 text-sm">Model Kodu</label>
-                <input type="text" name="model_code" value="{{ old('model_code', $product->model_code ?? '') }}" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Model kodu">
+                <input type="text" name="model_code" value="{{ old('model_code', $product->model_code ?? '') }}" maxlength="100" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Model kodu">
             </div>
             <div>
                 <label class="block text-gray-700 font-medium mb-1 text-sm">Renk</label>
-                <input type="text" name="color" value="{{ old('color', $product->color ?? '') }}" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Renk">
+                <input type="text" name="color" value="{{ old('color', $product->color ?? '') }}" maxlength="50" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Renk">
             </div>
             <div>
                 <label class="block text-gray-700 font-medium mb-1 text-sm">Cinsiyet / Hedef Kitle</label>
-                <input type="text" name="gender" value="{{ old('gender', $product->gender ?? '') }}" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Unisex, Kadın, Erkek vb.">
+                <input type="text" name="gender" value="{{ old('gender', $product->gender ?? '') }}" maxlength="50" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" placeholder="Unisex, Kadın, Erkek vb.">
             </div>
         </div>
 
@@ -126,11 +130,11 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
                 <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Trendyol Linki</label>
-                <input type="url" name="trendyol_url" value="{{ old('trendyol_url', $product->trendyol_url ?? '') }}" class="w-full border rounded-xl px-4 py-2 text-sm" placeholder="https://www.trendyol.com/...">
+                <input type="url" name="trendyol_url" value="{{ old('trendyol_url', $product->trendyol_url ?? '') }}" maxlength="500" class="w-full border rounded-xl px-4 py-2 text-sm" placeholder="https://www.trendyol.com/...">
             </div>
             <div>
                 <label class="block text-xs font-bold uppercase text-gray-600 mb-1">Hepsiburada Linki</label>
-                <input type="url" name="hepsiburada_url" value="{{ old('hepsiburada_url', $product->hepsiburada_url ?? '') }}" class="w-full border rounded-xl px-4 py-2 text-sm" placeholder="https://www.hepsiburada.com/...">
+                <input type="url" name="hepsiburada_url" value="{{ old('hepsiburada_url', $product->hepsiburada_url ?? '') }}" maxlength="500" class="w-full border rounded-xl px-4 py-2 text-sm" placeholder="https://www.hepsiburada.com/...">
             </div>
         </div>
 

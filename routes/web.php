@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\MarketplaceController;
 use App\Http\Controllers\KvkkController;
+use App\Http\Controllers\SupplierController;
 
 Route::get('/kvkk', [KvkkController::class, 'kvkk'])->name('kvkk.terms');
 
@@ -28,19 +29,24 @@ Route::prefix('yonetim')->name('admin.')->group(function () {
         Route::get('/visitors', [AdminController::class, 'visitors'])->name('visitors');
         Route::delete('/visitors/clear', [AdminController::class, 'clearVisitors'])->name('visitors.clear');
 
-        // Ürün İlgili Rotalar (Tekilleştirildi)
         Route::delete('/products/destroy-all', [ProductController::class, 'destroyAll'])->name('products.destroy-all');
         Route::get('/products/export', [ProductController::class, 'exportExcel'])->name('products.export');
         Route::put('/products/update-brand-all', [ProductController::class, 'updateBrandAll'])->name('products.update-brand-all');
+        Route::delete('/products/destroy-all', [ProductController::class, 'destroyAll'])->name('products.destroy-all');
+        Route::resource('products', ProductController::class);
         Route::resource('products', ProductController::class);
         Route::post('/admin/api/trigger-sync', [ProductController::class, 'syncFromXmlApi'])->name('admin.api.trigger-sync');
         
         Route::post('/categories/sync-xml', [CategoryController::class, 'syncFromXml'])->name('categories.sync-xml');
         Route::delete('/categories/delete-all', [CategoryController::class, 'deleteAllCategories'])->name('categories.deleteAll');
         Route::resource('categories', CategoryController::class)->except(['show']);
-
+        
         Route::resource('admins', AdminManagementController::class);
         Route::resource('messages', ContactMessageController::class)->only(['index', 'destroy']);
+
+        Route::post('/suppliers/sync-all', [SupplierController::class, 'syncAllActive'])->name('suppliers.syncAll');
+        Route::resource('suppliers', SupplierController::class);
+        Route::post('suppliers/{supplier}/sync', [SupplierController::class, 'syncNow'])->name('suppliers.sync');
 
         Route::prefix('marketplaces')->name('marketplaces.')->group(function () {
             Route::get('/settings', [MarketplaceController::class, 'settings'])->name('settings');
@@ -48,7 +54,8 @@ Route::prefix('yonetim')->name('admin.')->group(function () {
             Route::get('/logs', [MarketplaceController::class, 'logs'])->name('logs');
             Route::post('/sync-all', [MarketplaceController::class, 'syncAll'])->name('syncAll');
             
-            // Sinem Özel İşlem Rotaları
+            
+            Route::post('/push', [MarketplaceController::class, 'pushToMarketplaces'])->name('push');
             Route::post('/sinem/kar', [MarketplaceController::class, 'updateMargin'])->name('sinem.kar');
             Route::post('/sinem/sync', [MarketplaceController::class, 'uploadAndSync'])->name('sinem.sync');
         });

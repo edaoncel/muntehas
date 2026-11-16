@@ -23,12 +23,12 @@
         <div x-data="{ count: {{ mb_strlen(old('name', $product->name ?? '')) }} }">
             <div class="flex justify-between items-center mb-1">
                 <label class="block text-gray-700 font-medium text-sm">Ürün Adı</label>
-                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 36'"></span>
+                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 80'"></span>
             </div>
             <input type="text" 
                 name="name" 
                 value="{{ old('name', $product->name) }}" 
-                maxlength="36" 
+                maxlength="80" 
                 @input="count = $el.value.length" 
                 class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
                 required>
@@ -79,11 +79,11 @@
         <div x-data="{ count: {{ mb_strlen(old('description', $product->description ?? '')) }} }">
             <div class="flex justify-between items-center mb-1">
                 <label class="block text-gray-700 font-medium text-sm">Ürün Açıklaması</label>
-                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 505'"></span>
+                <span class="text-xs font-semibold text-gray-400" x-text="count + ' / 2000'"></span>
             </div>
             <textarea name="description" 
                     rows="3" 
-                    maxlength="505" 
+                    maxlength="2000" 
                     @input="count = $el.value.length" 
                     class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
                     placeholder="Ürün hakkında detaylar...">{{ old('description', $product->description) }}</textarea>
@@ -165,7 +165,7 @@
 
         <div class="flex justify-between items-center pt-4 border-t border-slate-100">
             <a href="{{ route('admin.products.index') }}" class="text-gray-600 hover:underline text-sm font-medium">Geri Dön</a>
-            <button type="submit" class="w-full bg-gray-600 text-white py-3 rounded-xl font-bold hover:bg-gray-700 transition shadow-sm text-sm">Değişiklikleri Kaydet</button>
+            <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition text-sm shadow-sm">Değişiklikleri Kaydet</button>
         </div>
     </form>
 </div>

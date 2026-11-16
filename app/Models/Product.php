@@ -2,7 +2,7 @@
 
 namespace App\Models;
 use App\Models\Category;
-
+use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,19 +32,27 @@ class Product extends Model
         'model_code',
         'gender',
         'color',
-        'last_action_note', // YENİ: Otomatik değişiklik notu için eklendi
+        'last_action_note', 
+        'is_manual_edited',
+        'supplier_id',
     ];
 
     protected $casts = [
         'images' => 'array',
+        'is_manual_edited' => 'boolean',
     ];
 
     public function category()
-{
-    return $this->belongsTo(Category::class, 'category_id');
-}
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
 
-protected static function booted()
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    protected static function booted()
     {
         static::updating(function ($product) {
             $changes = [];
@@ -56,7 +64,6 @@ protected static function booted()
             if ($product->isDirty('category_id')) {
                 $changes[] = 'Kategori değiştirildi';
             }
-            // YENİ: Fiyat ve indirimli fiyatı ayırdık
             if ($product->isDirty('price')) {
                 $changes[] = 'Fiyat güncellendi';
             }

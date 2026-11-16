@@ -67,70 +67,71 @@ if (session('last_viewed_updated_date') === today()->toDateString()) {
     }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:36',
-            'sku' => 'nullable|string|max:50|unique:products,sku',
-            'category_id' => 'nullable|exists:categories,id',
-            'description' => 'nullable|string|max:505',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
-            'stock' => 'required|integer|min:0',
-            'trendyol_url' => 'nullable|url',
-            'hepsiburada_url' => 'nullable|url',
-            'idefix_url' => 'nullable|url',
-            'amazon_url' => 'nullable|url',
-            'pazarama_url' => 'nullable|url',
-            'is_best_seller' => 'nullable|boolean',
+{
+    // Ürün adı 80 karakterden uzunsa otomatik kırp
+    if ($request->has('name')) {
+        $request->merge([
+            'name' => mb_substr($request->input('name'), 0, 80)
         ]);
-
-        // SKU boş bırakıldıysa otomatik üret
-        if (empty($validated['sku'])) {
-            $validated['sku'] = 'SKU-' . strtoupper(Str::random(8));
-        } else {
-            $validated['sku'] = strtoupper($validated['sku']);
-        }
-
-        if ($request->has('is_best_seller')) {
-            $validated['is_best_seller'] = true;
-            
-            if (Product::where('is_best_seller', true)->count() >= 7) {
-                $oldest = Product::where('is_best_seller', true)->oldest()->first();
-                if ($oldest) {
-                    $oldest->update(['is_best_seller' => false]);
-                }
-            }
-        } else {
-            $validated['is_best_seller'] = false;
-        }
-
-        $imagePaths = [];
-
-        if ($request->hasFile('images')) {
-            $destinationPath = public_path('img/products');
-            if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0777, true);
-            }
-
-            foreach ($request->file('images') as $image) {
-                if ($image && $image->isValid()) {
-                    $ext = strtolower($image->getClientOriginalExtension());
-                    if (in_array($ext, ['jpeg', 'png', 'jpg', 'webp']) && $image->getSize() <= (2048 * 1024)) {
-                        $imageName = time() . '_' . uniqid() . '.' . $ext;
-                        $image->move($destinationPath, $imageName);
-                        $imagePaths[] = 'img/products/' . $imageName;
-                    }
-                }
-            }
-        }
-
-        $validated['images'] = $imagePaths;
-        $validated['slug'] = Str::slug($request->name) . '-' . uniqid();
-
-        Product::create($validated);
-
-        return redirect()->route('admin.products.index')->with('success', 'Ürün başarıyla eklendi.');
     }
+
+    $validated = $request->validate([
+        'name' => 'required|string|max:80',
+        'brand' => 'nullable|string|max:255',
+        'barcode' => 'nullable|string|max:255',
+        'sku' => 'nullable|string|max:50|unique:products,sku',
+        'category_id' => 'nullable|exists:categories,id',
+        'description' => 'nullable|string|max:2000',
+        'price' => 'required|numeric|min:0',
+        'discount_price' => 'nullable|numeric|min:0|lt:price',
+        'stock' => 'required|integer|min:0',
+        'trendyol_url' => 'nullable|url|max:500',
+        'hepsiburada_url' => 'nullable|url|max:500',
+        'images' => 'nullable|array',
+        'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+        'is_best_seller' => 'nullable|boolean',
+    ]);
+
+    // SKU boş bırakıldıysa otomatik üret
+    if (empty($validated['sku'])) {
+        $validated['sku'] = 'SKU-' . strtoupper(Str::random(8));
+    } else {
+        $validated['sku'] = strtoupper($validated['sku']);
+    }
+
+    // Çok satan mantığı
+    if ($request->has('is_best_seller')) {
+        $validated['is_best_seller'] = true;
+        
+        if (Product::where('is_best_seller', true)->count() >= 7) {
+            $oldest = Product::where('is_best_seller', true)->oldest()->first();
+            if ($oldest) {
+                $oldest->update(['is_best_seller' => false]);
+            }
+        }
+    } else {
+        $validated['is_best_seller'] = false;
+    }
+
+    // GÖRSEL YÜKLEME (Tek ve doğru yöntem)
+    $imagePaths = [];
+    if ($request->hasFile('images')) {
+        foreach ($request->file('images') as $file) {
+            if ($file->isValid()) {
+                $path = $file->store('products', 'public');
+                $imagePaths[] = 'storage/' . $path; // Tabloda ve tasarımda 404 vermemesi için
+            }
+        }
+    }
+
+    $validated['images'] = $imagePaths;
+    $validated['slug'] = Str::slug($validated['name']) . '-' . uniqid();
+    $validated['is_manual_edited'] = true;
+
+    Product::create($validated);
+
+    return redirect()->route('admin.products.index')->with('success', 'Ürün başarıyla eklendi.');
+}
 
     public function edit(Product $product)
     {
@@ -140,29 +141,31 @@ if (session('last_viewed_updated_date') === today()->toDateString()) {
 
 public function update(Request $request, Product $product)
 {
-    // Ürün adı 36 karakterden uzunsa otomatik olarak ilk 36 karakterini alıyoruz
     if ($request->has('name')) {
         $request->merge([
-            'name' => mb_substr($request->input('name'), 0, 36)
+            'name' => mb_substr($request->input('name'), 0, 80)
         ]);
     }
 
     $validated = $request->validate([
-        'name' => 'required|string|max:36',
+        'name' => 'required|string|max:80',
         'brand' => 'nullable|string|max:255',
         'barcode' => 'nullable|string|max:255',
         'sku' => 'nullable|string|max:255',
         'category_id' => 'nullable|exists:categories,id',
-        'description' => 'nullable|string|max:505',
+        'description' => 'nullable|string|max:2000',
         'price' => 'required|numeric',
         'discount_price' => 'nullable|numeric',
         'stock' => 'required|integer',
         'trendyol_url' => 'nullable|url|max:500',
         'hepsiburada_url' => 'nullable|url|max:500',
         'is_best_seller' => 'nullable|boolean',
+        'images' => 'nullable|array',
+        'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+        'delete_images' => 'nullable|array',
     ]);
 
-    // Temel alanları güncelleyelim
+    // Temel alanları modele atayalım
     $product->name = $validated['name'];
     $product->brand = $validated['brand'] ?? null;
     $product->barcode = $validated['barcode'] ?? null;
@@ -175,33 +178,42 @@ public function update(Request $request, Product $product)
     $product->trendyol_url = $validated['trendyol_url'] ?? null;
     $product->hepsiburada_url = $validated['hepsiburada_url'] ?? null;
     $product->is_best_seller = $request->has('is_best_seller') ? 1 : 0;
+    $product->is_manual_edited = true;
 
     // Slug güncellemesi
     $product->slug = \Illuminate\Support\Str::slug($validated['name']) . '-' . $product->id;
 
-    // Görsel silme ve ekleme işlemleri...
+    // Mevcut görselleri al
+    $currentImages = $product->images ?? [];
+
+    // Görsel silme işlemleri
     if ($request->has('delete_images')) {
-        $existingImages = $product->images ?? [];
         $imagesToKeep = [];
-        foreach ($existingImages as $img) {
+        foreach ($currentImages as $img) {
             if (in_array($img, $request->delete_images)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($img);
+                // Veritabanında 'storage/products/...' şeklinde saklandığı için 
+                // fiziksel olarak silerken 'storage/' kısmını temizliyoruz
+                $cleanPath = str_replace('storage/', '', $img);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($cleanPath);
             } else {
                 $imagesToKeep[] = $img;
             }
         }
-        $product->images = $imagesToKeep;
+        $currentImages = $imagesToKeep;
     }
 
+    // YENİ GÖRSEL EKLEME (store fonksiyonu ile birebir aynı standartta!)
     if ($request->hasFile('images')) {
-        $currentImages = $product->images ?? [];
         foreach ($request->file('images') as $file) {
             $path = $file->store('products', 'public');
-            $currentImages[] = $path;
+            $currentImages[] = 'storage/' . $path; // <--- KRİTİK NOKTA: Başına 'storage/' eklendi
         }
-        $product->images = $currentImages;
     }
 
+    // Görsel dizisini modele aktar
+    $product->images = $currentImages;
+
+    // Veritabanına kaydet
     $product->save();
 
     return redirect()->route('admin.products.index')->with('success', 'Ürün başarıyla güncellendi.');
@@ -348,7 +360,6 @@ public function exportExcel()
 
 public function syncFromXmlApi(Request $request)
 {
-    // Yukarıda yazdığımız senkronizasyon mantığının aynısı
     $savedSetting = Setting::where('key', 'saved_xml_url')->first();
     $pathSetting = Setting::where('key', 'saved_xml_path')->first();
     
@@ -372,6 +383,10 @@ public function syncFromXmlApi(Request $request)
     $urunlerListesi = isset($xml->product) ? $xml->product : ($xml->Urun ?? ($xml->item ?? $xml->children()));
     $islenenSayisi = 0;
     $firma_kar = 26.00;
+    
+    // 💡 ÖRNEK: Bu genel toplu senkronizasyonun atanacağı varsayılan tedarikçi ID'si
+    // (Eğer bu metodu kullanacaksanız hangi tedarikçiye ait olduğunu burada belirtmelisiniz)
+    $defaultSupplierId = 1; 
 
     foreach ($urunlerListesi as $urun) {
         $stok_kodu = trim((string)($urun->sku ?? $urun->StokKodu ?? ''));
@@ -385,7 +400,7 @@ public function syncFromXmlApi(Request $request)
         if (!empty($kategoriAdi)) {
             Category::firstOrCreate(
                 ['name' => $kategoriAdi],
-                ['slug' => Str::slug($kategoriAdi), 'show_in_menu' => 1]
+                ['slug' => Str::slug($kategoriAdi), 'show_in_menu' => 0]
             );
         }
 
@@ -399,7 +414,10 @@ public function syncFromXmlApi(Request $request)
         $satis_fiyati = round($alis_fiyati * (1 + ($firma_kar / 100)), 2);
 
         Product::updateOrCreate(
-            ['sku' => $stok_kodu],
+            [
+                'sku' => $stok_kodu,
+                'supplier_id' => $defaultSupplierId
+            ],
             [
                 'name'              => $urun_adi,
                 'slug'              => Str::slug($urun_adi) . '-' . rand(1000, 9999),
@@ -413,11 +431,10 @@ public function syncFromXmlApi(Request $request)
         $islenenSayisi++;
     }
 
-    // JavaScript'in beklediği JSON yanıtı döndürüyoruz
     return response()->json([
         'status' => 'success', 
         'message' => "{$islenenSayisi} ürün başarıyla senkronize edildi!",
-        'total' => Product::count() // Güncel ürün sayısını da gönderiyoruz ki ekranda güncelleyebilesin
+        'total' => Product::count() 
     ]);
 }
 }

@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Visitor;
 use App\Models\MarketplaceProduct;
+use App\Models\Supplier;
 
 class AdminController extends Controller
 {
@@ -31,6 +32,12 @@ class AdminController extends Controller
 
         $syncedProductsCount = \App\Models\MarketplaceLog::where('status', 'success')->count();
 
+        // Tedarikçiler ve ilişkili ürünleri (kategorileriyle birlikte)
+        $suppliers = Supplier::with(['products.category'])
+                             ->withCount('products')
+                             ->where('is_active', true)
+                             ->get();
+
         return view('admin.dashboard', compact(
             'unreadMessagesCount',
             'productsCount', 
@@ -40,7 +47,8 @@ class AdminController extends Controller
             'todayVisitors',
             'newTodayCount',      
             'updatedTodayCount',  
-            'syncedProductsCount'
+            'syncedProductsCount',
+            'suppliers'
         ));
     }
 

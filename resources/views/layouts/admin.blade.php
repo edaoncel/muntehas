@@ -20,6 +20,113 @@
             }
         }
     </script>
+
+    <!-- 🕒 3 Dakika (180 Saniye) Sonra Bildirimi Otomatik Kapatan Script -->
+    <script>
+        setTimeout(function() {
+            let alertElement = document.getElementById('auto-dismiss-alert');
+            if (alertElement) {
+                let bsAlert = new bootstrap.Alert(alertElement);
+                bsAlert.close();
+            }
+        }, 180000); // 180 saniye = 3 dakika
+    </script>
+    <!-- GLOBAL BİLDİRİM KUTUSU (Her sayfada çalışır) -->
+    <div id="global-sync-notification" class="fixed top-5 right-5 z-50 max-w-md" style="display: none;">
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl shadow-lg flex items-start gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div class="flex-1 text-sm" id="global-sync-notification-text"></div>
+            <button type="button" onclick="document.getElementById('global-sync-notification').style.display='none'" class="text-emerald-500 hover:text-emerald-700">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const TOTAL_TIME = 1800; // 30 dakika = 1800 saniye
+        const now = Math.floor(Date.now() / 1000);
+        let targetTime = localStorage.getItem('sync_target_time');
+
+        if (!targetTime || parseInt(targetTime) <= now || parseInt(targetTime) > (now + TOTAL_TIME + 5)) {
+            targetTime = now + TOTAL_TIME;
+            localStorage.setItem('sync_target_time', targetTime);
+        } else {
+            targetTime = parseInt(targetTime);
+        }
+
+        const fnFormatTime = (seconds) => {
+            let minutes = Math.floor(seconds / 60);
+            let remainingSeconds = seconds % 60;
+            return minutes.toString().padStart(2, '0') + ':' + remainingSeconds.toString().padStart(2, '0');
+        };
+
+        const updateGlobalTimer = () => {
+            const currentTime = Math.floor(Date.now() / 1000);
+            let timeLeft = targetTime - currentTime;
+
+            if (timeLeft <= 0) {
+                timeLeft = 0;
+                clearInterval(window.globalSyncInterval);
+                
+                targetTime = Math.floor(Date.now() / 1000) + TOTAL_TIME;
+                localStorage.setItem('sync_target_time', targetTime);
+
+                // Otomatik senkronizasyonu tetikle
+                fetch('{{ route("admin.suppliers.syncAll") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Bildirimi global kutuda göster
+                    const notificationBox = document.getElementById('global-sync-notification');
+                    const notificationText = document.getElementById('global-sync-notification-text');
+                    
+                    if (notificationBox && notificationText && data.message) {
+                        notificationText.innerHTML = data.message;
+                        notificationBox.style.display = 'block';
+
+                        // 8 saniye sonra bildirimi otomatik kapat
+                        setTimeout(() => {
+                            notificationBox.style.display = 'none';
+                        }, 8000);
+                    }
+
+                    window.globalSyncInterval = setInterval(updateGlobalTimer, 1000);
+                })
+                .catch(error => {
+                    console.error('Arka plan senkronizasyon hatası:', error);
+                    window.globalSyncInterval = setInterval(updateGlobalTimer, 1000);
+                });
+
+                return;
+            }
+
+            // Sadece ayarlar sayfasındaysak sayaç elementlerini güncelle
+            const timerDisplay = document.getElementById('countdown-timer');
+            const progressBar = document.getElementById('progress-bar');
+
+            if (timerDisplay) {
+                timerDisplay.textContent = fnFormatTime(timeLeft);
+                timerDisplay.style.visibility = 'visible';
+            }
+            if (progressBar) {
+                let progressPercent = (timeLeft / TOTAL_TIME) * 100;
+                progressBar.style.width = progressPercent + '%';
+            }
+        };
+
+        updateGlobalTimer();
+        window.globalSyncInterval = setInterval(updateGlobalTimer, 1000);
+    });
+</script>
 </head>
 <body class="bg-slate-100 min-h-screen text-gray-800 antialiased" x-data="{ sidebarOpen: false }">
 

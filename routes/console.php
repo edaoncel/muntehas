@@ -3,78 +3,84 @@
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Log;
 use App\Models\Setting;
-use App\Models\Product;
-use App\Models\Category;
-use Illuminate\Support\Str;
+use App\Models\Supplier;
+use App\Services\SupplierSyncService;
+use App\Services\MarketplaceService;
 
+// 1. Tedarikçi XML'lerini Her 5 Saniyede Bir Senkronize Et (Test Amaçlı)
 Schedule::call(function () {
-    try {
-        $savedSetting = Setting::where('key', 'saved_xml_url')->first();
-        $pathSetting = Setting::where('key', 'saved_xml_path')->first();
-        
-        $xmlContent = null;
+    $syncService = new SupplierSyncService();
+    $suppliers = Supplier::where('is_active', true)->get();
+    
+    if ($suppliers->isEmpty()) return;
 
-        if ($savedSetting && !empty($savedSetting->value)) {
-            $urlWithCache = $savedSetting->value . '?t=' . time();
-            $xmlContent = @file_get_contents($urlWithCache);
-        } elseif ($pathSetting && file_exists($pathSetting->value)) {
-            $xmlContent = @file_get_contents($pathSetting->value);
+    $totalAddedGlobal = 0;
+    $totalUpdatedGlobal = 0;
+    $detailedReport = [];
+
+    foreach ($suppliers as $supplier) {
+        if (empty($supplier->xml_url)) continue;
+
+        try {
+            $result = $syncService->sync($supplier);
+            $added = $result['added'] ?? 0;
+            $updated = $result['updated'] ?? 0;
+
+            $totalAddedGlobal += $added;
+            $totalUpdatedGlobal += $updated;
+            $detailedReport[] = "{$supplier->name}: {$added} eklendi, {$updated} güncellendi";
+        } catch (\Exception $e) {
+            Log::error("Otomatik Senkronizasyon Hatası ({$supplier->name}): " . $e->getMessage());
         }
-
-        if (!$xmlContent) {
-            Log::warning("XML Otomatik Senkronizasyon: XML içeriği bulunamadı.");
-            return;
-        }
-
-        $xml = @simplexml_load_string($xmlContent);
-        if ($xml === false) {
-            Log::warning("XML Otomatik Senkronizasyon: XML parse edilemedi.");
-            return;
-        }
-
-        $firma_kar = 26.00;
-        $urunlerListesi = isset($xml->product) ? $xml->product : ($xml->Urun ?? ($xml->item ?? $xml->children()));
-
-        foreach ($urunlerListesi as $urun) {
-            $stok_kodu = trim((string)($urun->sku ?? $urun->StokKodu ?? ''));
-            if (empty($stok_kodu)) continue;
-
-            $urun_adi = (string)($urun->name ?? $urun->UrunAdi ?? 'İsimsiz');
-            $alis_fiyati = floatval($urun->price ?? $urun->Fiyat ?? 0);
-            $stok = intval($urun->stock ?? $urun->Stok ?? 10);
-            $kategoriAdi = trim((string)($urun->category ?? $urun->Kategori ?? 'Genel'));
-
-            if (!empty($kategoriAdi)) {
-                Category::firstOrCreate(
-                    ['name' => $kategoriAdi],
-                    ['slug' => Str::slug($kategoriAdi), 'show_in_menu' => 1]
-                );
-            }
-
-            $gorseller = [];
-            if (isset($urun->images->image)) {
-                foreach ($urun->images->image as $img) {
-                    $gorseller[] = (string)$img;
-                }
-            }
-
-            $satis_fiyati = round($alis_fiyati * (1 + ($firma_kar / 100)), 2);
-
-            Product::updateOrCreate(
-                ['sku' => $stok_kodu],
-                [
-                    'name'              => $urun_adi,
-                    'slug'              => Str::slug($urun_adi) . '-' . rand(1000, 9999),
-                    'price'             => $satis_fiyati > 0 ? $satis_fiyati : 100.00,
-                    'stock'             => $stok,
-                    'images'            => $gorseller,
-                    'affiliate_url'     => '#',
-                    'is_synced_updated' => true,
-                ]
-            );
-        }
-        Log::info("XML Otomatik Senkronizasyon: Başarıyla tamamlandı.");
-    } catch (\Exception $e) {
-        Log::error("XML Otomatik Senkronizasyon Hatası: " . $e->getMessage());
     }
-})->everyThirtyMinutes();
+
+    Setting::updateOrCreate(
+        ['key' => 'last_xml_sync_stats'],
+        ['value' => json_encode([
+            'last_sync_at'   => now()->toDateTimeString(),
+            'total_added'    => $totalAddedGlobal,
+            'total_updated'  => $totalUpdatedGlobal,
+            'details'        => $detailedReport,
+            'status'         => 'Success'
+        ])]
+    );
+})->everyThirtyMinutes()->name('coklu-xml-senkronizasyonu')->onOneServer()->withoutOverlapping();
+
+
+// 2. Güncellenen Ürünleri Her 5 Saniyede Bir Pazaryerlerine Gönder (Test Amaçlı)
+// Güncellenen Ürünleri Pazaryerlerine Gönder ve Detaylı İstatistik Kaydet
+Schedule::call(function () {
+    $marketplaceService = new MarketplaceService();
+    
+    try {
+        $result = $marketplaceService->syncProductsToMarketplaces();
+        $message = $result['message'] ?? 'Pazaryeri senkronizasyonu tamamlandı.';
+        $isSuccess = $result['success'] ?? true;
+        $productCount = $result['product_count'] ?? 0;
+
+        // 🟢 Kaç ürün gönderildiğini ve durumunu detaylıca kaydediyoruz
+        Setting::updateOrCreate(
+            ['key' => 'last_marketplace_sync_stats'],
+            ['value' => json_encode([
+                'last_sync_at'  => now()->toDateTimeString(),
+                'product_count' => $productCount,
+                'message'       => $message,
+                'status'        => $isSuccess ? 'Success' : 'Error'
+            ])]
+        );
+
+        Log::info("Otomatik Pazaryeri Gönderim Raporu: {$productCount} ürün işlendi - " . $message);
+    } catch (\Exception $e) {
+        Log::error("Otomatik Pazaryeri Gönderim Hatası: " . $e->getMessage());
+
+        Setting::updateOrCreate(
+            ['key' => 'last_marketplace_sync_stats'],
+            ['value' => json_encode([
+                'last_sync_at'  => now()->toDateTimeString(),
+                'product_count' => 0,
+                'message'       => 'Hata: ' . $e->getMessage(),
+                'status'        => 'Error'
+            ])]
+        );
+    }
+})->everyThirtyMinutes()->name('otomatik-pazaryeri-gonderimi')->onOneServer()->withoutOverlapping();

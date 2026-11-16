@@ -136,77 +136,166 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
     
-    {{-- 1. GRAFİK: TÜM KATEGORİLERİN DAĞILIMI --}}
-<div class="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-sm">
+<div class="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-sm mb-6 relative">
+    
     <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
         <div>
-            <span class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Genel Dağılım</span>
-            <h3 class="text-lg font-black text-gray-900 mt-0.5">Tüm Kategoriler</h3>
+            <span class="text-[10px] text-indigo-600 font-black uppercase tracking-widest">Çoklu Tedarikçi Vitrini</span>
+            <h3 class="text-lg font-black text-gray-900 mt-0.5">Tedarikçi Menü Dağılımı</h3>
         </div>
-        <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">SİNEM</span>
+        
+        @if(isset($suppliers) && count($suppliers) > 0)
+            <div class="flex items-center gap-3">
+                <button onclick="changeSupplierSlide(-1)" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-600 flex items-center justify-center transition-all shadow-2xs cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <span id="slide-counter" class="text-xs font-bold text-slate-500">1 / {{ count($suppliers) }}</span>
+                <button onclick="changeSupplierSlide(1)" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-600 flex items-center justify-center transition-all shadow-2xs cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        @endif
     </div>
 
-    @if(isset($categories) && count($categories) > 0)
+    @if(isset($suppliers) && count($suppliers) > 0)
+        {{-- Tedarikçi Slaytları Konteynerı --}}
+<div id="supplier-slides-wrapper" class="relative overflow-hidden">
+    @foreach($suppliers as $index => $supplier)
         @php
-            $generalColors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#6366f1', '#14b8a6', '#d946ef'];
-            
-            // products_count gelmese bile ilişki üzerinden güvenle sayar
-            $totalGeneralProd = $categories->sum(function($cat) {
-                return $cat->products_count ?? $cat->products->count();
-            });
+            if (!$supplier->relationLoaded('products')) {
+                $supplier->load('products.category');
+            } else {
+                $supplier->loadMissing('products.category');
+            }
 
-            $generalCurrentDegree = 0;
-            $generalGradientStops = [];
+            // 1. (Kategorisi olan tüm ürünleri alır)
+            $supplierMenuProducts = $supplier->products ? $supplier->products->filter(function($product) {
+                return $product->category !== null;
+            }) : collect();
 
-            if ($totalGeneralProd > 0) {
-                foreach($categories as $index => $cat) {
-                    $count = $cat->products_count ?? $cat->products->count();
-                    if ($count > 0) {
-                        $angle = ($count / $totalGeneralProd) * 360;
-                        $nextDegree = $generalCurrentDegree + $angle;
-                        $color = $generalColors[$index % count($generalColors)];
-                        $generalGradientStops[] = "{$color} {$generalCurrentDegree}deg {$nextDegree}deg";
-                        $generalCurrentDegree = $nextDegree;
+            // 2. Kategori ID'lerine göre grupla
+            $supplierCategoriesGrouped = $supplierMenuProducts->groupBy('category_id');
+            $supplierTotalMenuProd = $supplierMenuProducts->count();
+
+            // 3. Daire Grafik (Conic-Gradient) Hesaplaması
+            $supColors = ['#6366f1', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#d946ef'];
+            $supCurrentDegree = 0;
+            $supGradientStops = [];
+
+            if ($supplierTotalMenuProd > 0) {
+                $sIndex = 0;
+                foreach($supplierCategoriesGrouped as $catId => $products) {
+                    $cCount = $products->count();
+                    if ($cCount > 0) {
+                        $angle = ($cCount / $supplierTotalMenuProd) * 360;
+                        $nextDegree = $supCurrentDegree + $angle;
+                        $color = $supColors[$sIndex % count($supColors)];
+                        $supGradientStops[] = "{$color} {$supCurrentDegree}deg {$nextDegree}deg";
+                        $supCurrentDegree = $nextDegree;
+                        $sIndex++;
                     }
                 }
             }
-            $generalGradientString = count($generalGradientStops) > 0 ? implode(', ', $generalGradientStops) : '#e2e8f0 0deg 360deg';
+            $supGradientString = count($supGradientStops) > 0 ? implode(', ', $supGradientStops) : '#e2e8f0 0deg 360deg';
         @endphp
 
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-6 py-2">
-            {{-- Grafik (Halka Tasarımı) --}}
-            <div class="relative w-44 h-44 rounded-full shadow-inner shrink-0" style="background: conic-gradient({{ $generalGradientString }});">
-                <div class="absolute inset-7 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
-                    <span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Toplam Ürün</span>
-                    <span class="text-xl font-black text-slate-800">{{ $totalGeneralProd }}</span>
+        <div class="supplier-slide transition-all duration-300 {{ $index === 0 ? 'block' : 'hidden' }}" data-slide-index="{{ $index }}">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 py-2">
+                
+                <div class="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto shrink-0">
+                    <div class="relative w-48 h-48 rounded-full shadow-inner shrink-0" style="background: conic-gradient({{ $supGradientString }});">
+                        <div class="absolute inset-7 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
+                            <span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">{{ Str::limit($supplier->name, 12) }}</span>
+                            <span class="text-2xl font-black text-slate-800">{{ $supplierTotalMenuProd }}</span>
+                            <span class="text-[8px] text-indigo-600 font-bold uppercase">Menü Ürünü</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center sm:text-left">
+                        <span class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider bg-indigo-50 px-2.5 py-1 rounded-lg">Aktif Tedarikçi</span>
+                        <h4 class="text-xl font-black text-slate-900 mt-1.5">{{ $supplier->name }}</h4>
+                        <p class="text-xs text-slate-500 mt-0.5">Varsayılan Kâr Oranı: <strong class="text-slate-800">%{{ $supplier->default_profit_margin }}</strong></p>
+                        <span class="text-[10px] text-slate-400 block mt-3">Son Eşitleme: {{ $supplier->last_synced_at ? \Carbon\Carbon::parse($supplier->last_synced_at)->diffForHumans() : 'Henüz yapılmadı' }}</span>
+                    </div>
                 </div>
             </div>
+        </div>
+    @endforeach
+</div>
 
-            {{-- Kategori Listesi ve Renk Göstergeleri --}}
-            <div class="flex flex-col gap-2 w-full max-h-48 overflow-y-auto pr-1">
-                @foreach($categories as $index => $cat)
-                    @php
-                        $pCount = $cat->products_count ?? $cat->products->count();
-                        $pct = $totalGeneralProd > 0 ? round(($pCount / $totalGeneralProd) * 100, 1) : 0;
-                        $dotColor = $generalColors[$index % count($generalColors)];
-                    @endphp
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 border border-slate-100">
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: {{ $dotColor }};"></span>
-                            <span class="text-xs font-bold text-slate-700 truncate">{{ $cat->name }}</span>
-                        </div>
-                        <span class="text-xs font-black text-slate-900 shrink-0 ml-2">%{{ $pct }} <span class="text-[10px] text-slate-400 font-normal">({{ $pCount }})</span></span>
-                    </div>
-                @endforeach
-            </div>
+        {{-- Alt Nokta Göstergeleri (Pagination Dots) --}}
+        <div class="flex justify-center items-center gap-2 mt-6 pt-4 border-t border-slate-100">
+            @foreach($suppliers as $index => $supplier)
+                <button onclick="goToSupplierSlide({{ $index }})" class="supplier-dot w-2.5 h-2.5 rounded-full bg-slate-300 transition-all duration-300 cursor-pointer" data-index="{{ $index }}"></button>
+            @endforeach
         </div>
     @else
-        <div class="text-center py-8 text-slate-400 text-sm">Sistemde kayıtlı kategori bulunamadı.</div>
+        <div class="text-center py-8 text-slate-400 text-sm">Sistemde kayıtlı aktif tedarikçi bulunamadı.</div>
     @endif
 </div>
 
+<script>
+    let currentSlideIndex = 0;
+    const slides = document.querySelectorAll('.supplier-slide');
+    const dots = document.querySelectorAll('.supplier-dot');
+    const slideCounter = document.getElementById('slide-counter');
+    const totalSlides = slides.length;
 
-    {{-- 2. GRAFİK: SADECE MENÜDE GÖSTERİLEN ÖZEL KATEGORİLER --}}
+    function showSlide(index) {
+        if (totalSlides === 0) return;
+        
+        // Sınır kontrolü (Döngüsel)
+        if (index >= totalSlides) {
+            currentSlideIndex = 0;
+        } else if (index < 0) {
+            currentSlideIndex = totalSlides - 1;
+        } else {
+            currentSlideIndex = index;
+        }
+
+        // Slaytları gizle/göster
+        slides.forEach((slide, i) => {
+            if (i === currentSlideIndex) {
+                slide.classList.remove('hidden');
+                slide.classList.add('block');
+            } else {
+                slide.classList.remove('block');
+                slide.classList.add('hidden');
+            }
+        });
+
+        // Noktaları güncelle
+        dots.forEach((dot, i) => {
+            if (i === currentSlideIndex) {
+                dot.classList.add('bg-indigo-600', 'w-6');
+                dot.classList.remove('bg-slate-300', 'w-2.5');
+            } else {
+                dot.classList.remove('bg-indigo-600', 'w-6');
+                dot.classList.add('bg-slate-300', 'w-2.5');
+            }
+        });
+
+        // Sayaç metnini güncelle
+        if (slideCounter) {
+            slideCounter.textContent = `${currentSlideIndex + 1} / ${totalSlides}`;
+        }
+    }
+
+    function changeSupplierSlide(direction) {
+        showSlide(currentSlideIndex + direction);
+    }
+
+    function goToSupplierSlide(index) {
+        showSlide(index);
+    }
+
+    // İlk yüklemede başlangıç durumunu tetikle
+    document.addEventListener("DOMContentLoaded", () => {
+        showSlide(0);
+    });
+</script>
+
+
 {{-- 2. KART: MENÜDEKİ ÖZEL KATEGORİLER (Modern Grid Kart Tasarımı) --}}
 <div class="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-sm">
     <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">

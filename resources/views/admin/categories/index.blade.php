@@ -65,18 +65,6 @@
                 </form>
             </div>
 
-            <!-- XML'den Otomatik Çekme Kartı -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-md font-bold text-gray-900 mb-2">Tedarikçi Entegrasyonu</h2>
-                <p class="text-xs text-slate-500 mb-4">XML adresinde tanımlı olan tüm kategorileri sisteme tek tuşla aktarın.</p>
-                
-                <form action="{{ route('admin.categories.sync-xml') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-bold transition shadow-sm text-sm flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-sync"></i> XML'deki Kategorileri Otomatik Çek
-                    </button>
-                </form>
-            </div>
             <form action="{{ route('admin.categories.deleteAll') }}" method="POST" onsubmit="return confirm('DİKKAT: Tüm kategoriler kalıcı olarak silinecek ve ürünlerin kategori bağlantıları kaldırılacak. Emin misiniz?');">
                 @csrf
                 @method('DELETE')

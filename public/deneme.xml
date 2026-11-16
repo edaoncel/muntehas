@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<products>
+    <product>
+        <sku>MOD-5001</sku>
+        <name>Pamuklu Çift Kişilik Nevresim Takımı</name>
+        <category>Ev Tekstili</category>
+        <price>899.90</price>
+        <stock>15</stock>
+        <images>
+            <image>https://cdn.dsmcdn.com/ty2002/prod/QC_PREP/20261101/20/b4366cbe-2874-3509-a50d-7f43c5212105/1_org_zoom.jpg</image>
+        </images>
+    </product>
+    <product>
+        <sku>MOD-5002</sku>
+        <name>Porselen Yemek Takımı 24 Parça</name>
+        <category>Mutfakk</category>
+        <price>2450.00</price>
+        <stock>9</stock>
+        <images>
+            <image>https://cdn.dsmcdn.com/ty2001/prod/QC_PREP/20261101/15/9044319d-da6d-323a-830d-3dd96e4f07f2/1_org_zoom.jpg</image>
+        </images>
+    </product>
+</products>

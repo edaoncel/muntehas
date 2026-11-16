@@ -1,25 +1,146 @@
 @extends('layouts.admin')
 @section('title', 'Sinem - Pazaryeri Yönetimi & API Entegrasyonu')
-<!-- Bootstrap 5 CSS ve FontAwesome İkonlarını Sayfaya Dahil Et -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
 @section('content')
 <div class="container-fluid px-4 py-4" style="background-color: #f8fafc; min-height: 100vh;">
     
-    <!-- SAYFA BAŞLIĞI VE SİSTEM DURUMU -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom gap-3">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom gap-3">
         <div>
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-2.5 py-1.5 rounded">v2.4 Entegrasyon</span>
-                <span class="text-muted small">•</span>
-                <span class="text-muted small">Son Güncelleme: Bugün</span>
-            </div>
             <h1 class="h3 fw-bold text-dark mb-0">
                 <i class="fa-solid fa-network-wired text-primary me-2"></i>Pazaryeri Yönetimi & API Entegrasyonu
             </h1>
             <p class="text-muted small mb-0 mt-1">Trendyol, Hepsiburada ve Amazon API ayarlarını yapılandırın, fiyat kâr oranlarını yönetin ve XML senkronizasyonunu gerçekleştirin.</p>
         </div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+                
+            @foreach($suppliers as $supplier)
+    @php
+        // Senkronizasyon durumunu ve 1 günden eski olup olmadığını kontrol ediyoruz
+        $isSynced = !is_null($supplier->last_synced_at);
+        $isRecent = $isSynced && \Carbon\Carbon::parse($supplier->last_synced_at)->greaterThan(now()->subDay());
+    @endphp
+
+    <div class="flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 
+        {{ !$isSynced || !$isRecent ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200' }}" 
+        id="supplier-card-{{ $supplier->id }}">
+        
+        <div>
+            <h4 class="font-bold text-gray-900">{{ $supplier->name }}</h4>
+            
+            <span class="text-[10px] block mt-1 {{ !$isSynced || !$isRecent ? 'text-red-600' : 'text-emerald-700' }}">
+                Son Eşitleme: 
+                <strong class="{{ !$isSynced || !$isRecent ? 'text-red-700' : 'text-emerald-800' }} sync-time-text-{{ $supplier->id }}">
+                    @if($isSynced)
+                        <strong class="{{ !$isSynced || !$isRecent ? 'text-red-700' : 'text-emerald-800' }}">
+                            {{ \Carbon\Carbon::parse($supplier->last_synced_at)->timezone('Europe/Istanbul')->locale('tr')->translatedFormat('d F Y, H:i') }}
+                        </strong>
+                        <span class="{{ !$isSynced || !$isRecent ? 'text-red-500' : 'text-emerald-600' }}">
+                            ({{ \Carbon\Carbon::parse($supplier->last_synced_at)->timezone('Europe/Istanbul')->locale('tr')->diffForHumans() }})
+                        </span>
+                    @else
+                        <span class="text-red-500 font-semibold">Henüz senkronize edilmedi.</span>
+                    @endif
+                </strong>
+            </span>
+
+            {{-- 1 günden uzun süredir senkronize edilmediyse veya hiç yapılmadıysa uyarı metni gösterilir --}}
+            @if(!$isSynced || !$isRecent)
+                <div class="mt-2 flex items-center gap-1.5 text-red-600 text-[11px] font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Entegrasyon sisteminizi kontrol ediniz! (1 günden uzun süredir veri alınamadı)</span>
+                </div>
+            @endif
+        </div>
+
+        {{-- Sağ taraftaki sabit durum noktası (Yanıp sönmeyen statik renk) --}}
+        <div class="flex items-center gap-2">
+            <span class="flex h-3 w-3">
+              @if($isSynced && $isRecent)
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" title="Sistem Aktif ve Güncel"></span>
+              @else
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500" title="Entegrasyon Hatası / Gecikme"></span>
+              @endif
+            </span>
+        </div>
+
+    </div>
+@endforeach
+
+               <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.sync-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const supplierId = this.getAttribute('data-supplier-id');
+                const submitBtn = this.querySelector('.sync-btn');
+                const btnText = this.querySelector('.btn-text');
+                const timeContainer = document.querySelector(`.sync-time-text-${supplierId}`);
+
+                // Eğer elementler bulunamadıysa hata almamak için kontrol ekleyelim
+                if (!submitBtn || !btnText) return;
+
+                // Butonu yükleniyor durumuna al
+                submitBtn.disabled = true;
+                const originalBtnText = btnText.textContent;
+                btnText.textContent = 'Eşitleniyor...';
+
+                fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 1. Tarihi anında ekranda güncelle (Eğer DOM'da o element varsa)
+                        if (timeContainer) {
+                            timeContainer.innerHTML = `${data.formatted_date} (${data.human_date})`;
+                        }
+                        
+                        // 2. Global Bildirim Kutusu varsa orada göster, yoksa alert kullan
+                        const globalBox = document.getElementById('global-sync-notification');
+                        const globalText = document.getElementById('global-sync-notification-text');
+                        
+                        if (globalBox && globalText) {
+                            globalText.innerHTML = data.message;
+                            globalBox.style.display = 'block';
+                            
+                            setTimeout(() => {
+                                globalBox.style.display = 'none';
+                            }, 6000);
+                        } else {
+                            alert(data.message);
+                        }
+
+                        // Opsiyonel: Vitrin grafiklerini güncel tutmak için sayfayı 1.5 saniye sonra yenileyebilir veya verileri tazeleyebilirsiniz
+                        // window.location.reload(); 
+                    } else {
+                        alert(data.message || 'Senkronizasyon sırasında bir sorun oluştu.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Hata:', error);
+                    alert('Senkronizasyon sırasında ağ hatası oluştu.');
+                })
+                .finally(() => {
+                    // Butonu eski haline getir
+                    submitBtn.disabled = false;
+                    btnText.textContent = originalBtnText;
+                });
+            });
+        });
+    });
+</script>
+</div>
         <div class="d-flex align-items-center gap-2">
             <div class="bg-white p-2 px-3 rounded-4 shadow-sm border d-flex align-items-center gap-3">
                 <div class="position-relative">
@@ -34,7 +155,6 @@
         </div>
     </div>
 
-    <!-- BİLDİRİMLER -->
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4 d-flex align-items-center" role="alert">
             <div class="bg-success text-white rounded-circle p-2 me-3 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
@@ -55,127 +175,49 @@
         </div>
     @endif
 
-    <!-- HIZLI ÖZET İSTATİSTİKLERİ -->
-<div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 mb-6">
-    <div class="flex justify-between items-center mb-4">
-        <div>
-            <h3 class="text-lg font-bold text-gray-800">Canlı Senkronizasyon Durumu</h3>
-            <p class="text-sm text-gray-500">Sistem verileri otomatik olarak her 30 dakikada bir günceller.</p>
-        </div>
-        <!-- Geri Sayım ve Sayaç Alanı -->
-        <div class="flex items-center space-x-4">
-            <div class="text-right">
-                <span class="text-xs text-gray-400 block">Sonraki Otomatik Senkronizasyon:</span>
-                <span id="countdown-timer" class="text-lg font-mono font-bold text-indigo-600">30:00</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- İlerleme Çubuğu -->
-    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-        <div id="progress-bar" class="bg-indigo-600 h-2 transition-all duration-1000" style="width: 100%;"></div>
-    </div>
-</div>
-
-<script>
-    // 30 dakika = 1800 saniye
-    const TOTAL_TIME = 1800;
-    
-    let timeLeft = parseInt(localStorage.getItem('sync_time_left'));
-    
-    // Eğer hafızada süre yoksa veya geçersizse 1800 saniyeden başlat
-    if (isNaN(timeLeft) || timeLeft <= 0 || timeLeft > TOTAL_TIME) {
-        timeLeft = TOTAL_TIME;
-    }
-
-    let totalSyncs = parseInt(localStorage.getItem('total_syncs')) || {{ $totalSyncs ?? 0 }};
-    
-    const timerDisplay = document.getElementById('countdown-timer');
-    const progressBar = document.getElementById('progress-bar');
-    const syncCountDisplay = document.getElementById('sync-count');
-
-    if(syncCountDisplay) syncCountDisplay.textContent = totalSyncs;
-
-    // Saniyeyi "DK:SN" (Örn: 29:45) formatına çeviren yardımcı fonksiyon
-    fnFormatTime = (seconds) => {
-        let minutes = Math.floor(seconds / 60);
-        let remainingSeconds = seconds % 60;
-        return minutes.toString().padStart(2, '0') + ':' + remainingSeconds.toString().padStart(2, '0');
-    };
-
-    // İlk yüklemede ekrana yansıt
-    if(timerDisplay) timerDisplay.textContent = fnFormatTime(timeLeft);
-    if(progressBar) progressBar.style.width = ((timeLeft / TOTAL_TIME) * 100) + '%';
-
-    const countdown = setInterval(() => {
-        timeLeft--;
-        localStorage.setItem('sync_time_left', timeLeft);
-        
-        if(timerDisplay) timerDisplay.textContent = fnFormatTime(timeLeft);
-        
-        let progressPercent = (timeLeft / TOTAL_TIME) * 100;
-        if(progressBar) progressBar.style.width = progressPercent + '%';
-
-        if (timeLeft <= 0) {
-            clearInterval(countdown);
-            
-            localStorage.setItem('sync_time_left', TOTAL_TIME);
-
-            // Süre dolduğunda butonu tetikle veya sayfayı yenile
-            let syncButton = document.querySelector('#sync-button') || document.querySelector('form[action*="sync"] button') || document.querySelector('button[type="submit"]');
-            
-            if (syncButton) {
-                syncButton.click();
-            } else {
-                location.reload();
-            }
-        }
-    }, 1000);
-</script>
-    <div class="row g-3 mb-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-4 p-3 bg-primary bg-opacity-10 text-primary me-3">
-                        <i class="fa-solid fa-boxes-stacked fa-xl"></i>
+    <!-- HIZLI KONTROL VE TETİKLEME PANELİ -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+        <div class="row align-items-center justify-content-between g-3">
+            <!-- Sol Taraf: Bilgilendirme ve Geri Sayım -->
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-primary bg-opacity-10 text-primary">
+                        <i class="fa-solid fa-sync fa-lg"></i>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold">Toplam Senkronize Ürün</div>
-                        <h4 class="fw-bold mb-0 text-dark">{{ isset($urunler) ? count($urunler) : 0 }}</h4>
+                        <h4 class="fw-bold text-dark mb-1">Otomatik Senkronizasyon Paneli</h4>
+                        <p class="text-muted small mb-0">Tedarikçi XML ve pazaryeri entegrasyonları arka planda her 30 dakikada bir otomatik güncellenir.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sağ Taraf: Sayaç ve Şimdi Senkronize Et Butonu -->
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex flex-column align-items-md-end align-items-start gap-2">
+                    <div>
+                        <span class="text-xs text-muted me-1">Sonraki Otomatik Çalışma:</span>
+                        <span id="countdown-timer" class="text-sm font-mono fw-bold text-indigo-600" style="visibility: hidden;">--:--</span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-muted small">Aktif Mağaza: <strong>{{ (session('mp_trendyol_aktif', false) ? 1 : 0) + (session('mp_hepsiburada_aktif', false) ? 1 : 0) + (session('mp_amazon_aktif', false) ? 1 : 0) }} / 3</strong></span>
+                        
+                        <form action="{{ route('admin.marketplaces.push') }}" method="POST" class="m-0">
+                            @csrf
+                            <button type="submit" class="btn btn-success fw-semibold py-2 px-3 rounded-3 shadow-sm d-inline-flex align-items-center gap-2">
+                                <i class="fa-solid fa-rotate"></i> Pazaryerlerine Senkronize Et
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-4 p-3 bg-success bg-opacity-10 text-success me-3">
-                        <i class="fa-solid fa-store fa-xl"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small fw-semibold">Aktif Mağaza Sayısı</div>
-                        <h4 class="fw-bold mb-0 text-dark">
-                            {{ (session('mp_trendyol_aktif', true) ? 1 : 0) + (session('mp_hepsiburada_aktif', false) ? 1 : 0) + (session('mp_amazon_aktif', false) ? 1 : 0) }} / 3
-                        </h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-4 p-3 bg-warning bg-opacity-10 text-warning me-3">
-                        <i class="fa-solid fa-arrows-rotate fa-xl"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small fw-semibold">XML Senkronizasyonu</div>
-                        <h4 class="fw-bold mb-0 text-dark"><span id="sync-count">{{ $totalSyncs ?? 0 }}</span></h4>
-                    </div>
-                </div>
-            </div>
+
+        <!-- İlerleme Çubuğu -->
+        <div class="w-full bg-light rounded-pill h-2 overflow-hidden mt-4">
+            <div id="progress-bar" class="bg-primary h-2 transition-all duration-1000" style="width: 100%;"></div>
         </div>
     </div>
-
     <!-- PAZARYERİ KUTULARI (Trendyol, Hepsiburada, Amazon) -->
     <div class="row g-4 mb-4">
         
@@ -352,46 +394,188 @@
                 </div>
             </div>
         </div>
-
     </div>
 
-    <!-- XML YÜKLEME VE URL SENRONİZASYON KUTUSU -->
-<div class="card border-0 shadow-sm rounded-4 mb-4 bg-white border-top border-dark border-4">
-    <div class="card-body p-4">
-        <div class="d-flex align-items-center mb-3">
-            <div class="bg-dark bg-opacity-10 text-dark rounded-3 p-3 me-3 shadow-sm" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-cloud-arrow-up fa-lg"></i>
-            </div>
-            <div>
-                <h5 class="fw-bold text-dark mb-0">Tedarikçi XML Senkronizasyonu</h5>
-                <span class="text-muted small">İster bilgisayardan XML dosyası yükleyin, ister tedarikçinin XML linkini girerek otomatik eşitleyin.</span>
+
+<div class="container-fluid px-4 py-4">
+    
+    <!-- Başlık ve Yeni Ekle Butonu -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark">📦 Tedarikçi Yönetimi</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+            <i class="fas fa-plus me-1"></i> Yeni Tedarikçi Ekle
+        </button>
+    </div>
+
+    <!-- Başarı / Hata Mesajları -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+    <!-- Tedarikçiler Tablosu -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#ID</th>
+                            <th>Tedarikçi Adı</th>
+                            <th>XML Adresi</th>
+                            <th>Kâr Marjı (%)</th>
+                            <th>Ürün Sayısı</th>
+                            <th>Durum</th>
+                            <th>Son Senkronizasyon</th>
+                            <th class="text-end">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($suppliers as $supplier)
+                            <tr>
+                                <td>{{ $supplier->id }}</td>
+                                <td class="fw-semibold">{{ $supplier->name }}</td>
+                                <td>
+                                    <a href="{{ $supplier->xml_url }}" target="_blank" class="text-truncate d-inline-block" style="max-width: 200px;">
+                                        {{ $supplier->xml_url ?: 'Tanımsız' }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">%{{ $supplier->default_profit_margin }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ $supplier->products_count }} Ürün</span>
+                                </td>
+                                <td>
+                                    @if($supplier->is_active)
+                                        <span class="badge bg-success">Aktif</span>
+                                    @else
+                                        <span class="badge bg-danger">Pasif</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ $supplier->last_synced_at ? \Carbon\Carbon::parse($supplier->last_synced_at)->diffForHumans() : 'Hiç Senkronize Edilmedi' }}
+                                    </small>
+                                </td>
+                                <td class="text-end">
+                                    <form action="{{ route('admin.suppliers.sync', $supplier->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-warning text-white">
+                                            Senkronize Et
+                                        </button>
+                                    </form>
+
+                                    <!-- Düzenle Butonu -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editSupplierModal{{ $supplier->id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <!-- Sil Butonu -->
+                                    <form action="{{ route('admin.suppliers.destroy', $supplier->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bu tedarikçiyi silmek istediğinize emin misiniz?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            <!-- Düzenleme Modalı (Her tedarikçi için ayrı) -->
+                            <div class="modal fade" id="editSupplierModal{{ $supplier->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form action="{{ route('admin.suppliers.update', $supplier->id) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Tedarikçi Düzenle: {{ $supplier->name }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Tedarikçi Adı</label>
+                                                    <input type="text" name="name" class="form-control" value="{{ $supplier->name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">XML URL Adresi</label>
+                                                    <input type="url" name="xml_url" class="form-control" value="{{ $supplier->xml_url }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Varsayılan Kâr Marjı (%)</label>
+                                                    <input type="number" step="0.01" name="default_profit_margin" class="form-control" value="{{ $supplier->default_profit_margin }}" required>
+                                                </div>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" name="is_active" value="1" id="isActiveEdit{{ $supplier->id }}" {{ $supplier->is_active ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="isActiveEdit{{ $supplier->id }}">Tedarikçi Aktif (XML Çekimlerine Dahil Et)</label>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                <button type="submit" class="btn btn-primary">Değişiklikleri Kaydet</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">Sistemde kayıtlı tedarikçi bulunmuyor.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <form action="{{ route('admin.marketplaces.sinem.sync') }}" method="POST" enctype="multipart/form-data" class="row g-3 align-items-center mt-2">
-            @csrf
-            
-            <!-- URL Giriş Alanı -->
-            <div class="col-lg-5">
-                <label class="form-label small fw-bold text-secondary">XML Canlı URL Adresi</label>
-                <input type="url" name="xml_url" class="form-control bg-light border-0 py-2.5" placeholder="https://tedarikci.com/ornek.xml" value="{{ \App\Models\Setting::where('key', 'saved_xml_url')->value('value') }}">
-            </div>
-
-            <!-- Veya Dosya Yükleme Alanı -->
-            <div class="col-lg-4">
-                <label class="form-label small fw-bold text-secondary">Veya Bilgisayardan Dosya Seç</label>
-                <input class="form-control bg-light border-0 py-2.5" type="file" name="xml_dosyasi" accept=".xml">
-            </div>
-
-            <div class="col-lg-3 d-flex align-items-end">
-                <button type="submit" class="btn w-100 py-2.5 fw-semibold text-white shadow-sm mt-auto" style="background-color: #f97316; border-color: #f97316;">
-                    <i class="fa-solid fa-rotate me-1"></i> Senkronize Et
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
+<!-- Yeni Tedarikçi Ekleme Modalı -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('admin.suppliers.store') }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">Yeni Tedarikçi Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <div class="mb-3">
+                        <label class="form-label">Tedarikçi Adı</label>
+                        <input type="text" name="name" class="form-control" placeholder="Örn: X Tedarikçisi A.Ş." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">XML URL Adresi</label>
+                        <input type="url" name="xml_url" class="form-control" placeholder="https://ornek.com/feed.xml">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Varsayılan Kâr Marjı (%)</label>
+                        <input type="number" step="0.01" name="default_profit_margin" class="form-control" value="26.00" required>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="is_active" value="1" id="isActiveAdd" checked>
+                        <label class="form-check-label" for="isActiveAdd">Tedarikçi Aktif</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Tedarikçiyi Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
     <!-- ÜRÜN LİSTESİ TABLOSU -->
     <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
     <div class="card-header bg-white py-3 px-4 border-bottom border-light d-flex justify-content-between align-items-center flex-wrap gap-2">
