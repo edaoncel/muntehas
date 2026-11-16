@@ -24,25 +24,23 @@
 </head>
 <body class="bg-[#f8faf8] min-h-screen text-slate-800 antialiased flex flex-col justify-between selection:bg-emerald-700 selection:text-white" x-data="{ mobileMenu: false, mobileCatOpen: false }">
 
-<nav class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 sm:px-12 h-24 flex justify-between items-center">
-            
-            <!-- Logo -->
+<nav class="bg-white/90 backdrop-blur-md border-b border-emerald-100 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-6 sm:px-12 h-20 flex justify-between items-center">
             <a href="{{ url('/') }}" class="flex items-center">
-                <img src="{{ asset('img/logo/logo.png') }}" alt="Muntehas" class="h-11 w-auto object-contain">
+                <img src="{{ asset('img/logo/logo.png') }}" alt="Muntehas" class="h-10 sm:h-14 w-auto object-contain">
             </a>
 
-            <!-- Masaüstü Menü Linkleri -->
-            <div class="hidden md:flex items-center space-x-8 text-xs font-bold tracking-widest text-slate-700 uppercase">
-    <a href="{{ url('/') }}" class="text-emerald-800 hover:text-emerald-600 transition">Ana Sayfa</a>
+<!-- Masaüstü Menü -->
+<div class="hidden md:flex items-center space-x-6 text-xs font-semibold tracking-widest text-slate-700 uppercase">
+    <a href="{{ url('/') }}" class="text-emerald-700 hover:text-emerald-900 transition">ANASAYFA</a>
 
     @php
-        $allCategories = \App\Models\Category::orderBy('name')->get();
-        $menuCategories = $allCategories->where('show_in_menu', true);
+        $navCategories = \App\Models\Category::orderBy('name')->get();
+        $menuCategories = $navCategories->where('show_in_menu', true);
     @endphp
 
     <!-- Tüm Kategoriler Dropdown Menü -->
-    @if($allCategories->count() > 0)
+    @if($navCategories->count() > 0)
         <div class="relative" x-data="{ catDropdown: false }" @mouseleave="catDropdown = false">
             <button @mouseover="catDropdown = true" @click="catDropdown = !catDropdown" class="flex items-center gap-1.5 hover:text-emerald-600 transition py-2 focus:outline-none">
                 <span>KATEGORİLER</span>
@@ -61,17 +59,17 @@
                  x-transition:leave-start="opacity-100 translate-y-0"
                  x-transition:leave-end="opacity-0 translate-y-2"
                  class="absolute top-full left-0 w-56 max-h-80 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-xl py-3 px-2 space-y-1 z-50">
-                @foreach($allCategories as $navCat)
+                @foreach($navCategories as $navCat)
                     <a href="{{ url('/?category=' . $navCat->slug . '#urunler') }}" 
                        class="block px-3.5 py-2 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 transition">
                         @if($navCat->show_in_menu) ✨ @endif {{ $navCat->name }}
                     </a>
                 @endforeach
             </div>
-        </div>
+        </div> <!-- ✅ Eksik olan dropdown kapsayıcı kapanışı buraya eklendi -->
     @endif
 
-    <!-- Parlayan Özel Menü Kategorileri -->
+    <!-- Özel Vurgulu Menü Kategorileri -->
     @foreach($menuCategories as $menuCat)
         <a href="{{ url('/?category=' . $menuCat->slug . '#urunler') }}" 
            class="group relative inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 border border-amber-300 text-amber-900 font-extrabold hover:shadow-md hover:shadow-amber-500/20 hover:scale-105 transition-all duration-300">
@@ -91,27 +89,33 @@
         </a>
     @endforeach
 
-    <a href="{{ route('contact') }}" class="hover:text-emerald-600 transition">İletişim</a>
-</div>
+    <a href="{{ route('contact') }}" class="hover:text-emerald-700 transition">İLETİŞİM</a>
 
-            <!-- Sağ Butonlar (Panel / Admin Girişi) -->
-            <div class="flex items-center gap-4">
-                @auth('admin')
-                    <a href="{{ route('admin.dashboard') }}" class="hidden sm:inline-flex bg-emerald-800 text-white hover:bg-emerald-900 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition shadow-sm">Yönetim Paneli</a>
-                @else
-                    <a href="{{ route('admin.login') }}" class="hidden sm:inline-flex border border-slate-300 text-slate-800 hover:bg-slate-900 hover:text-white px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition">Admin Girişi</a>
-                @endauth
-                
-                <!-- Mobil Hamburger Butonu -->
-                <button x-on:click="mobileMenu = !mobileMenu" type="button" class="md:hidden p-3 text-slate-800 bg-slate-100 rounded-2xl border border-slate-200 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    @auth('admin')
+        <a href="{{ route('admin.dashboard') }}" class="bg-emerald-800 text-white px-5 py-2.5 rounded-full hover:bg-emerald-900 transition text-[11px]">Panel</a>
+    @else
+        <a href="{{ route('admin.login') }}" class="border border-emerald-700 text-emerald-800 px-5 py-2.5 rounded-full hover:bg-emerald-800 hover:text-white transition text-[11px]">Giriş Yap</a>
+    @endauth
+</div>
+            <!-- Mobil Hamburger Butonu -->
+            <div class="md:hidden flex items-center">
+                <button @click="mobileMenu = !mobileMenu" class="p-2.5 rounded-2xl bg-emerald-50 text-emerald-900 border border-emerald-200 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path x-show="!mobileMenu" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        <path x-show="mobileMenu" x-cloak stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
             </div>
         </div>
 
-        <!-- Mobil Menü -->
-        <div x-show="mobileMenu" x-cloak class="md:hidden bg-white border-b border-slate-200 px-8 py-6 space-y-4 shadow-2xl">
-    <a href="{{ url('/') }}" class="block text-sm font-bold text-emerald-800 uppercase tracking-wider">Ana Sayfa</a>
+        <!-- MOBİL AÇILIR MENÜ -->
+        <div x-show="mobileMenu" x-cloak 
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0 -translate-y-2"
+     x-transition:enter-end="opacity-100 translate-y-0"
+     class="md:hidden bg-white border-b border-emerald-100 px-6 py-6 space-y-4 shadow-2xl">
+    
+    <a href="{{ url('/') }}" class="block text-sm font-bold text-emerald-800">ANASAYFA</a>
 
     @php
         $allMobileCategories = \App\Models\Category::orderBy('name')->get();
@@ -120,14 +124,14 @@
 
     <!-- Tüm Kategoriler (Açılır / Kapanır) -->
     @if($allMobileCategories->count() > 0)
-        <div x-data="{ mobileCatOpen: false }" class="border-y border-slate-100 py-2.5">
-            <button @click="mobileCatOpen = !mobileCatOpen" class="w-full flex items-center justify-between text-sm font-bold text-slate-800 uppercase tracking-wider py-1 focus:outline-none">
-                <span>Kategoriler</span>
+        <div x-data="{ mobileCatOpen: false }" class="border-y border-slate-100 py-2">
+            <button @click="mobileCatOpen = !mobileCatOpen" class="w-full flex items-center justify-between text-sm font-bold text-slate-700 py-1 focus:outline-none">
+                <span>KATEGORİLER</span>
                 <svg class="w-4 h-4 transition-transform duration-200" :class="mobileCatOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                 </svg>
             </button>
-            <div x-show="mobileCatOpen" x-cloak class="mt-2.5 space-y-2 max-h-60 overflow-y-auto pl-2">
+            <div x-show="mobileCatOpen" x-cloak class="mt-2 space-y-2 max-h-60 overflow-y-auto pl-2">
                 @foreach($allMobileCategories as $cat)
                     <a href="{{ url('/?category=' . $cat->slug . '#urunler') }}" 
                        @click="mobileMenu = false"
@@ -155,15 +159,16 @@
         </div>
     @endif
 
-    <a href="{{ route('contact') }}" class="block text-sm font-bold text-slate-800 uppercase tracking-wider">İletişim</a>
+    <a href="{{ route('contact') }}" class="block text-sm font-bold text-slate-700">İLETİŞİM</a>
 
-    <div class="pt-4 border-t border-slate-100">
+    <div class="pt-2 border-t border-slate-100">
         @auth('admin')
-            <a href="{{ route('admin.dashboard') }}" class="block text-center bg-emerald-800 text-white py-3.5 rounded-full text-xs font-bold uppercase tracking-wider transition">Yönetim Paneli</a>
+            <a href="{{ route('admin.dashboard') }}" class="block text-center bg-emerald-800 text-white py-3 rounded-2xl text-xs font-bold uppercase tracking-wider shadow-md">Panel</a>
         @else
-            <a href="{{ route('admin.login') }}" class="block text-center bg-slate-100 text-slate-900 border border-slate-300 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider transition">Admin Girişi</a>
+            <a href="{{ route('admin.login') }}" class="block text-center bg-emerald-50 text-emerald-900 border border-emerald-200 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider">Giriş Yap</a>
         @endauth
     </div>
+
 </div>
     </nav>
 
@@ -211,35 +216,35 @@
                 <ul>
                 <!-- 1. INSTAGRAM -->
                 <li>
-                    <a href="https://www.instagram.com/muntehas.tr/" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
+                    <a href="https://www.instagram.com/muntehaas?vrfl=ZzhvMXU3MzcxMm1p" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
                         <svg class="w-4 h-4 text-brandOrange group-hover:scale-110 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                             <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
                         </svg>
-                        <span>Instagram (@muntehas.tr)</span>
+                        <span>Instagram (@muntehaas)</span>
                     </a>
                 </li>
 
                 <!-- 2. FACEBOOK -->
                 <li class="mt-2">
-                    <a href="https://www.facebook.com/share/19GHvLb4DJ/" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
+                    <a href="https://www.facebook.com/profile.php?id=61596509737357" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
                         <svg class="w-4 h-4 text-brandOrange group-hover:scale-110 transition" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                         </svg>
-                        <span>Facebook (Muntehas)</span>
+                        <span>Facebook (Munte Has)</span>
                     </a>
                 </li>
 
                 <!-- 3. TIKTOK -->
-                <li class="mt-2">
+                <!-- <li class="mt-2">
                     <a href="https://www.tiktok.com/@muntehas.tr" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
                         <svg class="w-4 h-4 text-brandOrange group-hover:scale-110 transition" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.13z"/>
                         </svg>
                         <span>TikTok (@muntehas.tr)</span>
                     </a>
-                </li>
+                </li> -->
             </ul>
         </div>
     </div>

@@ -106,8 +106,6 @@
         <a href="{{ route('admin.login') }}" class="border border-emerald-700 text-emerald-800 px-5 py-2.5 rounded-full hover:bg-emerald-800 hover:text-white transition text-[11px]">Giriş Yap</a>
     @endauth
 </div>
-
-
             <!-- Mobil Hamburger Butonu -->
             <div class="md:hidden flex items-center">
                 <button @click="mobileMenu = !mobileMenu" class="p-2.5 rounded-2xl bg-emerald-50 text-emerald-900 border border-emerald-200 focus:outline-none">
@@ -117,14 +115,6 @@
                     </svg>
                 </button>
             </div>
-
-
-
-
-
-
-
-
         </div>
 
         <!-- MOBİL AÇILIR MENÜ -->
@@ -1344,25 +1334,6 @@
     </main>
 </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <div x-data="{ 
     isOpen: false, 
     messages: [
@@ -1382,13 +1353,19 @@
             let t = cleanText.toLowerCase();
             let reply = 'Harika bir soru! Detaylı bilgi için iletişim sayfamızı ziyaret edebilir veya sosyal medya hesaplarımızdan bize yazabilirsiniz. 🛍️';
 
-            if(t.includes('kargo') || t.includes('teslimat')) {
+            if (t.includes('kargo') || t.includes('teslimat')) {
                 reply = 'Siparişlerimiz ulusal pazaryerleri (Trendyol, Hepsiburada vb.) üzerinden aynı gün kargoya verilmektedir! 🚚';
-            } else if(t.includes('en çok satan') || t.includes('popüler') || t.includes('çok satan')) {
+            } else if (t.includes('en çok satan') || t.includes('popüler') || t.includes('çok satan')) {
                 reply = 'En çok tercih edilen popüler ürünlerimizi yukarıdaki En Çok Satanlar vitrininde inceleyebilirsiniz! 🔥';
-            } else if(t.includes('instagram') || t.includes('sosyal')) {
-                reply = 'Bizi Instagram üzerinden @muntehas.tr hesabımızdan takip edebilirsiniz! 📸';
-            } else if(t.includes('iade') || t.includes('değişim')) {
+            } else if (t.includes('instagram')) {
+                reply = 'Bizi Instagram üzerinden @muntehaas hesabımızdan takip edebilirsiniz! 📸';
+            } else if (t.includes('facebook')) {
+                reply = 'Bizi Facebook üzerinden Munte Has sayfamızdan takip edebilirsiniz! 📘';
+            } else if (t.includes('tiktok')) {
+                reply = 'Bizi TikTok üzerinden @muntehas hesabımızdan takip edebilirsiniz! 🎵';
+            } else if (t.includes('sosyal')) {
+                reply = 'Bizi Instagram (@muntehaas), Facebook (Munte Has) ve TikTok (@muntehas) hesaplarımızdan takip edebilirsiniz! ✨';
+            } else if (t.includes('iade') || t.includes('değişim')) {
                 reply = 'İade ve değişim işlemlerinizi sipariş oluşturduğunuz pazaryeri platformu üzerinden kolayca gerçekleştirebilirsiniz! 🔄';
             }
 
@@ -1457,47 +1434,45 @@
 
     <!-- Sohbet Penceresi -->
     <div x-show="isOpen" 
-         x-cloak 
-         class="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-emerald-100 overflow-hidden flex flex-col h-[460px]">
-        
-        <!-- Header -->
-        <div class="bg-emerald-900 text-white p-4 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <h3 class="font-bold text-xs uppercase tracking-wider">Muntehas Asistan</h3>
-            </div>
-            <button @click="isOpen = false" type="button" class="text-emerald-200 hover:text-white text-lg font-bold cursor-pointer">&times;</button>
+     x-cloak 
+     class="absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-emerald-100 overflow-hidden flex flex-col h-[460px]">
+    
+    <!-- Header -->
+    <div class="bg-emerald-900 text-white p-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h3 class="font-bold text-xs uppercase tracking-wider">Muntehas Asistan</h3>
         </div>
-
-        <!-- Hızlı Sorular -->
-        <div class="bg-slate-50 p-2.5 border-b border-slate-100 flex gap-1.5 overflow-x-auto text-[11px] whitespace-nowrap">
-            <button @click="sendMessage('En çok satanlar neler?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">🔥 Çok Satanlar</button>
-            <button @click="sendMessage('Kargo süreci nasıl?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">🚚 Kargo</button>
-            <button @click="sendMessage('İade yapabilir miyim?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">🔄 İade</button>
-            <button @click="sendMessage('Instagram adresiniz nedir?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">📸 Instagram</button>
-        </div>
-
-        <!-- Mesajlar Gövdesi -->
-        <div id="aiChatBody" class="flex-1 p-4 overflow-y-auto space-y-3 bg-[#fafcfb] text-xs">
-            <template x-for="(msg, index) in messages" :key="index">
-                <div :class="msg.sender === 'user' ? 'text-right' : 'text-left'">
-                    <div :class="msg.sender === 'user' ? 'bg-emerald-800 text-white ml-auto rounded-2xl rounded-tr-sm' : 'bg-white text-slate-800 border border-emerald-100 mr-auto rounded-2xl rounded-tl-sm shadow-xs'" 
-                         class="inline-block p-3 max-w-[85%] leading-relaxed" x-text="msg.text"></div>
-                </div>
-            </template>
-        </div>
-
-        <!-- Mesaj Yazma Alanı -->
-        <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
-            <input type="text" x-model="userInput" @keydown.enter.prevent="sendMessage(userInput)" placeholder="Bir şeyler sorun..." class="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-xs focus:outline-none focus:border-emerald-700">
-            <button @click="sendMessage(userInput)" type="button" class="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold transition cursor-pointer">Gönder</button>
-        </div>
-
-
-
-
-
+        <button @click="isOpen = false" type="button" class="text-emerald-200 hover:text-white text-lg font-bold cursor-pointer">&times;</button>
     </div>
+
+    <!-- Hızlı Sorular -->
+    <div class="bg-slate-50 p-2.5 border-b border-slate-100 flex gap-1.5 overflow-x-auto text-[11px] whitespace-nowrap">
+        <button @click="sendMessage('En çok satanlar neler?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">🔥 Çok Satanlar</button>
+        <button @click="sendMessage('Kargo süreci nasıl?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">🚚 Kargo</button>
+        <button @click="sendMessage('İade yapabilir miyim?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">🔄 İade</button>
+        <button @click="sendMessage('Instagram adresiniz nedir?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">📸 Instagram</button>
+        <button @click="sendMessage('Facebook adresiniz nedir?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">📘 Facebook</button>
+        <button @click="sendMessage('TikTok adresiniz nedir?')" type="button" class="bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer">🎵 TikTok</button>
+    </div>
+
+    <!-- Mesajlar Gövdesi -->
+    <div id="aiChatBody" class="flex-1 p-4 overflow-y-auto space-y-3 bg-[#fafcfb] text-xs">
+        <template x-for="(msg, index) in messages" :key="index">
+            <div :class="msg.sender === 'user' ? 'text-right' : 'text-left'">
+                <div :class="msg.sender === 'user' ? 'bg-emerald-800 text-white ml-auto rounded-2xl rounded-tr-sm' : 'bg-white text-slate-800 border border-emerald-100 mr-auto rounded-2xl rounded-tl-sm shadow-xs'" 
+                     class="inline-block p-3 max-w-[85%] leading-relaxed" x-text="msg.text"></div>
+            </div>
+        </template>
+    </div>
+
+    <!-- Mesaj Yazma Alanı -->
+    <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
+        <input type="text" x-model="userInput" @keydown.enter.prevent="sendMessage(userInput)" placeholder="Bir şeyler sorun..." class="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-xs focus:outline-none focus:border-emerald-700">
+        <button @click="sendMessage(userInput)" type="button" class="bg-emerald-800 hover:bg-emerald-900 text-white px-4 py-2 rounded-full text-xs font-bold transition cursor-pointer">Gönder</button>
+    </div>
+
+</div>
 
     <!-- Asistanı Açıp Kapatma Butonu -->
     <button @click="isOpen = !isOpen" type="button" class="bg-emerald-800 hover:bg-emerald-900 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 relative group cursor-pointer">
@@ -1544,35 +1519,35 @@
                 <ul>
                 <!-- 1. INSTAGRAM -->
                 <li>
-                    <a href="https://www.instagram.com/muntehas.tr/" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
+                    <a href="https://www.instagram.com/muntehaas?vrfl=ZzhvMXU3MzcxMm1p" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
                         <svg class="w-4 h-4 text-brandOrange group-hover:scale-110 transition" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
                             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                             <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
                         </svg>
-                        <span>Instagram (@muntehas.tr)</span>
+                        <span>Instagram (@muntehaas)</span>
                     </a>
                 </li>
 
                 <!-- 2. FACEBOOK -->
                 <li class="mt-2">
-                    <a href="https://www.facebook.com/share/19GHvLb4DJ/" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
+                    <a href="https://www.facebook.com/profile.php?id=61596509737357" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
                         <svg class="w-4 h-4 text-brandOrange group-hover:scale-110 transition" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                         </svg>
-                        <span>Facebook (Muntehas)</span>
+                        <span>Facebook (Munte Has)</span>
                     </a>
                 </li>
 
                 <!-- 3. TIKTOK -->
-                <li class="mt-2">
+                <!-- <li class="mt-2">
                     <a href="https://www.tiktok.com/@muntehas.tr" target="_blank" class="hover:text-white transition flex items-center gap-2 group">
                         <svg class="w-4 h-4 text-brandOrange group-hover:scale-110 transition" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.13z"/>
                         </svg>
                         <span>TikTok (@muntehas.tr)</span>
                     </a>
-                </li>
+                </li> -->
             </ul>
         </div>
     </div>
