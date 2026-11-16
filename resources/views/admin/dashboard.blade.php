@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Sinem - Yönetim Paneli')
+@section('title', 'Muntehas - Panel')
 
 @section('content')
 <div class="max-w-6xl mx-auto space-y-10">
@@ -17,7 +17,7 @@
 
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-slate-100">
         <div>
-            <span class="text-[10px] text-brandOrange font-black uppercase tracking-widest">Sinem Kontrol Merkezi</span>
+            <span class="text-[10px] text-brandOrange font-black uppercase tracking-widest">Muntehas Kontrol Merkezi</span>
             <h1 class="text-3xl font-black text-gray-900 mt-1 tracking-tight">Hoş Geldiniz, {{ Auth::guard('admin')->user()?->name ?? 'Yönetici' }}</h1>
             <p class="text-gray-500 text-xs sm:text-sm font-light mt-1">Platformun ürünlerini, gelen mesajları ve kategorileri buradan yönetin.</p>
         </div>
@@ -303,7 +303,7 @@
             <span class="text-[10px] text-brandOrange font-black uppercase tracking-widest">Özel Koleksiyonlar</span>
             <h3 class="text-lg font-black text-gray-900 mt-0.5">Menüdeki Kategoriler</h3>
         </div>
-        <span class="text-xs text-brandOrange font-bold uppercase tracking-wider">SİNEM</span>
+        <span class="text-xs text-brandOrange font-bold uppercase tracking-wider">MUNTEHAS</span>
     </div>
 
     @if(isset($specialCategories) && count($specialCategories) > 0)

@@ -27,7 +27,7 @@ class MarketplaceController extends Controller
         $yeni_kar = floatval($request->input('varsayilan_kar', 26));
         session(['sinem_kar' => $yeni_kar]);
 
-        return redirect()->back()->with('success', "Sinem kâr oranı %{$yeni_kar} olarak güncellendi!");
+        return redirect()->back()->with('success', "Muntehas kâr oranı %{$yeni_kar} olarak güncellendi!");
     }
 
     /**

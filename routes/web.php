@@ -56,8 +56,8 @@ Route::prefix('yonetim')->name('admin.')->group(function () {
             
             
             Route::post('/push', [MarketplaceController::class, 'pushToMarketplaces'])->name('push');
-            Route::post('/sinem/kar', [MarketplaceController::class, 'updateMargin'])->name('sinem.kar');
-            Route::post('/sinem/sync', [MarketplaceController::class, 'uploadAndSync'])->name('sinem.sync');
+            Route::post('/muntehas/kar', [MarketplaceController::class, 'updateMargin'])->name('muntehas.kar');
+            Route::post('/muntehas/sync', [MarketplaceController::class, 'uploadAndSync'])->name('muntehas.sync');
         });
     });
 });

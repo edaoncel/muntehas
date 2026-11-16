@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yönetici Girişi - Sinem</title>
+    <title>Yönetici Girişi - Muntehas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -27,7 +27,7 @@
         <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-800 to-emerald-600"></div>
 
         <div class="text-center mb-8 pt-2">
-            <span class="text-[10px] uppercase tracking-widest text-emerald-700 font-extrabold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 inline-block mb-3">Sinem Yönetim Paneli</span>
+            <span class="text-[10px] uppercase tracking-widest text-emerald-700 font-extrabold bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 inline-block mb-3">Muntehas Yönetim Paneli</span>
             <h1 class="text-2xl font-light uppercase tracking-tight text-slate-900">Yönetici Girişi</h1>
             <p class="text-xs text-slate-500 mt-1 font-light">Lütfen yetkili hesap bilgilerinizle giriş yapın.</p>
         </div>
@@ -43,7 +43,7 @@
             @csrf
             <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2">E-Posta Adresi</label>
-                <input type="email" name="email" value="{{ old('email') }}" required placeholder="ornek@sinem.com" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-800 focus:border-emerald-600 focus:bg-white outline-none transition placeholder-slate-400">
+                <input type="email" name="email" value="{{ old('email') }}" required placeholder="ornek@muntehas.com" class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs text-slate-800 focus:border-emerald-600 focus:bg-white outline-none transition placeholder-slate-400">
             </div>
 
             <div>

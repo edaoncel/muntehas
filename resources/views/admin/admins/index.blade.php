@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Sinem - Yönetici Paneli')
+@section('title', 'Muntehas - Yönetici Paneli')
 
 @section('content')
 <div class="max-w-6xl mx-auto">

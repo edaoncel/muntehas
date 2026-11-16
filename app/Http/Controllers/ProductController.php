@@ -237,7 +237,7 @@ public function update(Request $request, Product $product)
 
 public function exportExcel()
 {
-    $fileName = 'sinem-urun-listesi-' . date('d-m-Y') . '.xls';
+    $fileName = 'muntehas-urun-listesi-' . date('d-m-Y') . '.xls';
     
     $headers = [
         "Content-type"        => "application/vnd.ms-excel; charset=UTF-8",

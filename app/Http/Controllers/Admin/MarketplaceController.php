@@ -152,7 +152,7 @@ public function uploadAndSync(Request $request)
             $model_code = trim((string)($urun->model_code ?? $urun->ModelCode ?? $urun->ModelKodu ?? $urun->Model ?? ''));
             $color      = trim((string)($urun->color ?? $urun->Color ?? $urun->Renk ?? ''));
             $aciklama   = (string)($urun->description ?? $urun->Aciklama ?? $urun->Detay ?? $urun->details ?? '');
-            $marka      = 'Sinem'; 
+            $marka      = 'Muntehas'; 
             $barkod     = trim((string)($urun->barcode ?? $urun->Barcode ?? $urun->Barkod ?? $urun->GTIN ?? $urun->Ean ?? ''));
             
             $alis_fiyati = floatval($urun->price ?? $urun->Fiyat ?? $urun->AlisFiyati ?? 0);

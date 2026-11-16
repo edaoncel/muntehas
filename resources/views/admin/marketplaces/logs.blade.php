@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Sinem - Pazaryeri Entegrasyon Logları')
+@section('title', 'Muntehas - Pazaryeri Entegrasyon Logları')
 
 @section('content')
 <div class="max-w-6xl mx-auto space-y-8">

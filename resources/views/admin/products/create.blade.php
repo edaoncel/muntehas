@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Sinem - Yeni Ürün Ekle')
+@section('title', 'Muntehas - Yeni Ürün Ekle')
 
 @section('content')
 <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
@@ -44,7 +44,7 @@
                     value="{{ old('brand', $product->brand ?? '') }}" 
                     maxlength="100"
                     class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm" 
-                    placeholder="Örn: Sinem">
+                    placeholder="Örn: Muntehas">
             </div>
             <div>
                 <label class="block text-gray-700 font-medium mb-1 text-sm">Barkod (GTIN / EAN)</label>
